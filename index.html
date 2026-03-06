@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>RouteMaster — Warehouse Path Optimizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="bg-canvas"></div>
+  <div class="bg-grid"></div>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">📦</div>
+        <div>
+          <h1>RouteMaster</h1>
+          <p>Warehouse Order Path Optimizer</p>
+        </div>
+      </div>
+      <div class="live-badge"><span class="pulse-dot"></span> BFS Engine Active</div>
+    </header>
+
+    <!-- HOW IT WORKS -->
+    <div class="how-bar">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-body"><strong>Load Input</strong><span>Choose a preset, paste JSON, or upload a .json / .csv
+            file</span></div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-body"><strong>Define Grid</strong><span>0 = walkable aisle &nbsp;·&nbsp; 1 = shelf obstacle
+            &nbsp;·&nbsp; 2 = target item</span></div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-body"><strong>Run BFS</strong><span>Breadth-First Search finds the guaranteed shortest
+            path</span></div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">4</div>
+        <div class="how-body"><strong>Visualize</strong><span>Animate the path step-by-step with full breakdown</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN TWO-COL -->
+    <div class="main-grid">
+
+      <!-- LEFT: INPUT -->
+      <div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-icon">⚙️</span>
+            <span class="card-title">Input Configuration</span>
+            <span class="card-pill" id="mode-pill">Preset</span>
+          </div>
+
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('presets',this)">⚡ Presets</button>
+            <button class="tab-btn" onclick="switchTab('json',this)">{ } JSON</button>
+            <button class="tab-btn" onclick="switchTab('upload',this)">📂 Upload File</button>
+          </div>
+
+          <!-- PRESETS -->
+          <div class="tab-panel active" id="tab-presets">
+            <button class="preset-card" onclick="loadPreset('example')">
+              <div class="p-icon g">✅</div>
+              <div style="flex:1">
+                <div class="p-name">Example — Simple Path</div>
+                <div class="p-desc">3×3 warehouse grid with one clear route. Perfect starting point.</div>
+                <div class="p-tags"><span class="p-tag">3 × 3</span><span class="p-tag">3 steps</span><span
+                    class="p-tag">Reachable</span></div>
+              </div>
+              <span class="preset-arrow">›</span>
+            </button>
+            <button class="preset-card" onclick="loadPreset('hard')">
+              <div class="p-icon a">🧩</div>
+              <div style="flex:1">
+                <div class="p-name">Hard Case — Obstacle Maze</div>
+                <div class="p-desc">5×5 grid with multiple shelves forcing the picker along a winding route.</div>
+                <div class="p-tags"><span class="p-tag">5 × 5</span><span class="p-tag">Many obstacles</span><span
+                    class="p-tag">Longer path</span></div>
+              </div>
+              <span class="preset-arrow">›</span>
+            </button>
+            <button class="preset-card" onclick="loadPreset('nopath')">
+              <div class="p-icon r">🚫</div>
+              <div style="flex:1">
+                <div class="p-name">No-Path Case — Blocked Target</div>
+                <div class="p-desc">Target is completely surrounded by shelves — picker cannot reach it.</div>
+                <div class="p-tags"><span class="p-tag">5 × 5</span><span class="p-tag">Unreachable</span><span
+                    class="p-tag">target_reached: false</span></div>
+              </div>
+              <span class="preset-arrow">›</span>
+            </button>
+            <button class="preset-card" onclick="loadPreset('maze')">
+              <div class="p-icon" style="background:rgba(168,85,247,0.12);font-size:20px">🌀</div>
+              <div style="flex:1">
+                <div class="p-name">Wall Maze — Detour Demo</div>
+                <div class="p-desc">7×7 grid with two wall barriers. BFS finds the only route winding all the way
+                  around.</div>
+                <div class="p-tags"><span class="p-tag">7 × 7</span><span class="p-tag">Two walls</span><span
+                    class="p-tag">Clear detour</span></div>
+              </div>
+              <span class="preset-arrow">›</span>
+            </button>
+          </div>
+
+          <!-- JSON -->
+          <div class="tab-panel" id="tab-json">
+            <div class="json-wrap">
+              <textarea id="json-input" spellcheck="false" autocomplete="off"
+                placeholder='Paste JSON here…&#10;&#10;{&#10;  "grid": [[0,0,1],[1,0,1],[0,2,0]],&#10;  "start": [0,0],&#10;  "targets": [[2,1]]&#10;}'></textarea>
+            </div>
+            <div class="json-hint">💡 Required fields: <code>grid</code>, <code>start</code>, <code>targets</code></div>
+          </div>
+
+          <!-- UPLOAD -->
+          <div class="tab-panel" id="tab-upload">
+            <div class="file-preview" id="fp">
+              <span class="fp-icon" id="fp-icon">📄</span>
+              <span class="fp-name" id="fp-name">–</span>
+              <span class="fp-size" id="fp-size">–</span>
+              <button class="fp-clear" onclick="clearFile()">✕</button>
+            </div>
+            <div class="upload-zone" id="upload-zone">
+              <input type="file" id="file-input" accept=".json,.csv" onchange="handleFile(event)" />
+              <span class="upload-icon">🗂️</span>
+              <div class="upload-title">Drop your file here</div>
+              <div class="upload-sub">or click to browse your computer</div>
+              <div class="upload-fmts">
+                <span class="fmt-tag">📋 .json</span>
+                <span class="fmt-tag">📊 .csv</span>
+              </div>
+            </div>
+            <div class="csv-help">
+              <div class="csv-help-title">📊 CSV File Format</div>
+              <div class="csv-help-body">
+                Grid rows: comma-separated values — <code>0</code> walkable, <code>1</code> obstacle, <code>2</code>
+                target.<br />
+                After grid rows, add <code>start,row,col</code> and <code>target,row,col</code> lines:
+                <div class="csv-ex">0,0,1<br />1,0,1<br />0,2,0<br />start,0,0<br />target,2,1</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR -->
+          <div class="error-box" id="err-box">
+            <span>⚠️</span><span id="err-txt"></span>
+          </div>
+
+          <!-- CALC BUTTON -->
+          <div class="calc-sec">
+            <button id="calc-btn" onclick="handleCalc()">
+              <span class="btn-lbl">▶ Calculate Route</span>
+              <div class="btn-spinner"></div>
+            </button>
+            <div class="btn-row">
+              <button class="secondary-btn" onclick="handleReset()">↺ Reset Everything</button>
+              <button class="secondary-btn" id="copy-btn" onclick="copyOut()">📋 Copy JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUT -->
+      <div class="out-col">
+
+        <div class="card stats-card" id="stats-card">
+          <div class="card-head">
+            <span class="card-icon">📊</span>
+            <span class="card-title">Results</span>
+            <span class="card-pill" id="result-pill">—</span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-cell">
+              <div class="stat-lbl">Total Steps</div>
+              <div class="stat-val" id="s-steps">—</div>
+              <div class="stat-sub">cells traversed</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-lbl">Target Reached</div>
+              <div class="stat-val med" id="s-reached">—</div>
+              <div class="stat-sub" id="s-reached-sub">—</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-lbl">Execution Time</div>
+              <div class="stat-val" id="s-time">—</div>
+              <div class="stat-sub">milliseconds</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-lbl">Grid Size</div>
+              <div class="stat-val" id="s-grid">—</div>
+              <div class="stat-sub">rows × columns</div>
+            </div>
+          </div>
+          <div class="shimmer" id="shimmer"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-icon">{ }</span>
+            <span class="card-title">JSON Output</span>
+            <span class="card-pill" id="out-pill">Awaiting input</span>
+            <button class="dl-btn" id="dl-json-btn" onclick="downloadJSON()" style="display:none"
+              title="Download output as .json file">⬇ JSON</button>
+          </div>
+          <div class="out-pre-wrap">
+            <pre id="output-pre" class="out-ph">// Run a calculation to see the result here.</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- GRID VISUALIZATION -->
+    <div class="grid-sec" id="grid-sec">
+      <div class="grid-sec-top">
+        <div class="grid-sec-title">🗺️ Grid Visualization</div>
+        <div class="grid-ctrls">
+          <button class="ctrl-btn" id="play-btn" onclick="playAnim()">▶ Play Path</button>
+          <button class="ctrl-btn" id="speed-btn" onclick="cycleSpeed()">⚡ Normal</button>
+          <button class="ctrl-btn" id="explore-btn" onclick="toggleExplored()">👁 Show BFS Explored</button>
+          <button class="ctrl-btn" onclick="zoom(1)">＋ Zoom</button>
+          <button class="ctrl-btn" onclick="zoom(-1)">－ Zoom</button>
+          <button class="dl-btn amber" onclick="downloadPNG()" title="Download grid as PNG image">⬇ PNG</button>
+        </div>
+      </div>
+
+      <div class="grid-card">
+        <div class="grid-center">
+          <div>
+            <div class="coords-row" id="coord-top"
+              style="display:flex;align-items:center;gap:4px;margin-bottom:8px;padding-left:22px;"></div>
+            <div style="display:flex;gap:0">
+              <div class="coords-col" id="coord-left" style="width:18px;gap:4px;"></div>
+              <div class="grid-svg-wrap" id="grid-svg-wrap">
+                <div id="grid-wrap"></div>
+                <svg id="path-svg" width="0" height="0"></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="anim-prog" id="anim-prog">
+          <div class="prog-bg">
+            <div class="prog-fill" id="prog-fill"></div>
+          </div>
+          <div class="prog-lbl" id="prog-lbl">—</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-sw ls-s"></div>Start (S)
+        </div>
+        <div class="legend-item">
+          <div class="legend-sw ls-t"></div>Target (T)
+        </div>
+        <div class="legend-item">
+          <div class="legend-sw ls-p"></div>Shortest Path + Arrow
+        </div>
+        <div class="legend-item">
+          <div class="legend-sw ls-o"></div>Obstacle / Shelf 🧱
+        </div>
+        <div class="legend-item">
+          <div class="legend-sw ls-w"></div>Walkable Aisle
+        </div>
+        <div class="legend-item">
+          <div class="legend-sw ls-e"></div>BFS Explored
+        </div>
+      </div>
+
+      <div class="card step-card" id="step-card" style="margin-top:20px">
+        <div class="card-head">
+          <span class="card-icon">🔢</span>
+          <span class="card-title">Step-by-Step Path Breakdown</span>
+        </div>
+        <div class="step-scroll">
+          <table class="step-tbl">
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Position [row, col]</th>
+                <th>Direction</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="step-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
