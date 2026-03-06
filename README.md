@@ -227,5 +227,8 @@ Or simply drag `index.html` into any browser window. Works fully offline.
 - [ ] **⬇ PNG** → 2× retina image with legend strip downloads correctly
 
 ---
+## ⚙️ Requirements & Setup
+
+> **No installation required.** RouteMaster runs entirely in the browser as a single HTML file.
 
 *RouteMaster — Built for Hackathon 2025 · Logistics & Supply Chain Track*
