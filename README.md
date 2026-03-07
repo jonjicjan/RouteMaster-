@@ -120,29 +120,15 @@ PATH RECONSTRUCTION:
 
 ```text
 routemaster/
-│
-├── index.html                          # ← Entire app (HTML + CSS + JS, zero dependencies)
+
+├── LICENSE                             # MIT License
 ├── README.md                           # Project documentation
-│
-└── demo-datasets/
-    ├── input_match.csv                 # Exact match for the sample JSON input
-    ├── demo_simple.csv                 # 3×3   — basic 3-step example
-    ├── demo_hard_maze.csv              # 5×5   — multiple shelf obstacles
-    ├── demo_no_path.csv                # 5×5   — blocked target (unreachable)
-    ├── demo_wall_maze.csv              # 7×7   — two perpendicular walls
-    ├── demo_corridor.csv               # 3×12  — long shelf-pillar corridor
-    ├── demo_diagonal_detour.csv        # 6×6   — corner-to-corner detour
-    ├── demo_warehouse_10x10.csv        # 10×10 — realistic warehouse layout
-    ├── large_warehouse_15x15.csv       # 15×15 — mid-size hand-crafted layout
-    ├── large_warehouse_20x20.csv       # 20×20 — dense shelving with cross-aisles
-    ├── large_warehouse_25x25.csv       # 25×25 — realistic aisle + shelf columns
-    ├── large_warehouse_30x30.csv       # 30×30 — full warehouse with clearance aisles
-    ├── large_warehouse_50x50.csv       # 50×50 — large fulfillment center
-    ├── multi_pickup_leg1.csv           # 20×20 — collection run: start → item A
-    ├── multi_pickup_leg2.csv           # 20×20 — collection run: item A → item B
-    ├── multi_pickup_leg3.csv           # 20×20 — collection run: item B → dispatch
-    ├── complex_maze_35x35.csv          # 35×35 — recursive backtracker maze, 161-step path
-    └── stress_test_100x100.csv         # 100×100 — 10,000 cells, 2,276 obstacles, <5ms solve
+├── index.html                          # Main application structure
+├── script.js                           # BFS algorithm & UI logic
+├── style.css                           # Modern premium styling
+
+Demo datesets
+
 ```
 
 ---
