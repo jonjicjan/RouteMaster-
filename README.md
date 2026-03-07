@@ -1,5 +1,5 @@
 # 📦 RouteMaster — Warehouse Order Path Optimizer
-### **Logistics & Supply Chain Hackathon 2025**
+### **Logistics & Supply Chain Hackathon 2026**
 
 [![HTML5](https://img.shields.io/badge/HTML5-Single_File_App-E34F26.svg)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla_ES6+-F7DF1E.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
@@ -231,4 +231,4 @@ Or simply drag `index.html` into any browser window. Works fully offline.
 
 > **No installation required.** RouteMaster runs entirely in the browser as a single HTML file.
 
-*RouteMaster — Built for Hackathon 2025 · Logistics & Supply Chain Track*
+*RouteMaster — Built for Hackathon 2026 · Logistics & Supply Chain Track*
