@@ -52,8 +52,15 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: radial-gradient(ellipse 60% 40% at 10% 20%, rgba(0, 212, 180, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 90% 80%, rgba(168, 85, 247, 0.04) 0%, transparent 60%);
+  background: radial-gradient(ellipse 60% 40% at 10% 20%, rgba(0, 212, 180, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 90% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+  animation: bg-shift 20s ease-in-out infinite alternate;
+}
+
+@keyframes bg-shift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(10deg); }
 }
 
 .bg-grid {
@@ -107,6 +114,18 @@ header {
   font-size: 28px;
   flex-shrink: 0;
   box-shadow: 0 8px 28px rgba(0, 212, 180, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+  animation: icon-float 3s ease-in-out infinite;
+}
+
+.brand-icon:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 12px 40px rgba(0, 212, 180, 0.5);
+}
+
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .brand h1 {
@@ -234,12 +253,31 @@ header {
   border: 1px solid var(--border);
   border-radius: var(--r);
   overflow: hidden;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r);
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 212, 180, 0.1), rgba(168, 85, 247, 0.1), rgba(245, 158, 11, 0.1));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .card:hover {
   border-color: var(--border2);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 180, 0.1);
+  transform: translateY(-2px);
+}
+
+.card:hover::before {
+  opacity: 1;
 }
 
 .card-head {
@@ -341,21 +379,33 @@ header {
   border-bottom: 1px solid var(--border);
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 16px;
   color: inherit;
   text-align: left;
+  position: relative;
+  overflow: hidden;
 }
 
-.preset-card:last-child {
-  border-bottom: none;
+.preset-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 212, 180, 0.05), rgba(168, 85, 247, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .preset-card:hover {
   background: rgba(0, 212, 180, 0.04);
   padding-left: 28px;
+  transform: translateX(4px);
+}
+
+.preset-card:hover::before {
+  opacity: 1;
 }
 
 .preset-card:hover .preset-arrow {
@@ -665,18 +715,33 @@ header {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all 0.25s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 20px rgba(0, 212, 180, 0.25);
   letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+#calc-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 #calc-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(0, 212, 180, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(0, 212, 180, 0.4);
+}
+
+#calc-btn:hover::before {
+  opacity: 1;
 }
 
 #calc-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 #calc-btn.loading {
@@ -780,12 +845,30 @@ header {
 .stat-cell {
   background: var(--card);
   padding: 22px 24px;
-  transition: all 0.25s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 180, 0.1), transparent);
+  transition: left 0.5s;
 }
 
 .stat-cell:hover {
   background: var(--card2);
-  transform: scale(1.02);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.stat-cell:hover::before {
+  left: 100%;
 }
 
 .stat-lbl {
@@ -1099,49 +1182,56 @@ header {
 .cell.walkable {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cell.walkable:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(0, 212, 180, 0.2);
+  transform: scale(1.05);
 }
 
 .cell.explored {
-  background: #0e1f35;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, #0e1f35, #1a2a3a);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: inset 0 0 8px rgba(59, 130, 246, 0.1);
 }
 
 .cell.obstacle {
-  background: #08111c;
+  background: linear-gradient(135deg, #08111c, #0a141e);
   border: 1px solid #0d1e2e;
+  position: relative;
 }
 
 .cell.obstacle::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 2px, transparent 2px, transparent 8px);
-}
-
-.cell.obstacle::after {
-  content: '🧱';
-  position: absolute;
-  font-size: 0.7em;
-  opacity: 0.18;
-  pointer-events: none;
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 2px, transparent 2px, transparent 8px);
 }
 
 .cell.path {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
   border: 1px solid #b45309;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1);
+  animation: path-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes path-glow {
+  0% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1); }
+  100% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.2); }
 }
 
 .cell.start {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #10b981, #059669, #047857);
   border: 1px solid #047857;
-  box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .cell.target {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, #ef4444, #dc2626, #b91c1c);
   border: 1px solid #b91c1c;
-  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .cell.path-flash {
@@ -1415,25 +1505,33 @@ header {
   bottom: 28px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: var(--card2);
+  background: linear-gradient(135deg, var(--card2), rgba(0, 212, 180, 0.05));
   border: 1px solid var(--border2);
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 999px;
   font-size: 13px;
   color: var(--text);
   opacity: 0;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9999;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 180, 0.1);
   pointer-events: none;
+  backdrop-filter: blur(10px);
 }
 
 .toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0) scale(1);
+  animation: toast-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes toast-bounce {
+  0% { transform: translateX(-50%) translateY(20px) scale(0.9); }
+  50% { transform: translateX(-50%) translateY(-5px) scale(1.05); }
+  100% { transform: translateX(-50%) translateY(0) scale(1); }
 }
 
 /* Scrollbar */

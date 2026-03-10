@@ -43,27 +43,57 @@ function parseAndValidate(str) {
   if (sr < 0 || sr >= p.grid.length || sc < 0 || sc >= p.grid[0].length) throw new Error(`"start" [${sr},${sc}] is out of bounds.`);
   if (p.grid[sr][sc] === 1) throw new Error(`"start" [${sr},${sc}] is on an obstacle (value 1). Move start to a walkable cell (value 0).`);
   if (!Array.isArray(p.targets) || !p.targets.length) throw new Error('"targets" must be a non-empty array.');
-  if (!Array.isArray(p.targets[0]) || p.targets[0].length !== 2) throw new Error('"targets[0]" must be [row, col].');
-  const [tr, tc] = p.targets[0];
-  if (tr < 0 || tr >= p.grid.length || tc < 0 || tc >= p.grid[0].length) throw new Error(`"targets[0]" [${tr},${tc}] is out of bounds.`);
-  if (p.grid[tr][tc] === 1) throw new Error(`"targets[0]" [${tr},${tc}] is on an obstacle (value 1). Target must be on value 0 or 2.`);
-  return { grid: p.grid, start: p.start, target: p.targets[0] };
+  for (let i = 0; i < p.targets.length; i++) {
+    if (!Array.isArray(p.targets[i]) || p.targets[i].length !== 2) throw new Error(`"targets[${i}]" must be [row, col].`);
+    const [tr, tc] = p.targets[i];
+    if (tr < 0 || tr >= p.grid.length || tc < 0 || tc >= p.grid[0].length) throw new Error(`"targets[${i}]" [${tr},${tc}] is out of bounds.`);
+    if (p.grid[tr][tc] === 1) throw new Error(`"targets[${i}]" [${tr},${tc}] is on an obstacle (value 1). Target must be on value 0 or 2.`);
+  }
+  return { grid: p.grid, start: p.start, targets: p.targets };
 }
 
 function parseCSV(text) {
   const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
-  const grid = [], meta = {};
-  for (const line of lines) {
-    if (line.startsWith('start,')) { const p = line.split(','); meta.start = [+p[1], +p[2]]; }
-    else if (line.startsWith('target,')) { const p = line.split(','); meta.target = [+p[1], +p[2]]; }
-    else { const row = line.split(',').map(v => +v.trim()); if (row.some(isNaN)) throw new Error(`Bad CSV row: "${line}"`); grid.push(row); }
+  let grid, start, targets;
+  if (lines.length === 2 && lines[0] === 'grid,start,targets') {
+    // Handle the special CSV format with JSON strings
+    const data = lines[1];
+    // Remove outer quotes and split by '","'
+    const parts = data.slice(1, -1).split('","');
+    if (parts.length !== 3) throw new Error('Invalid CSV format. Expected 3 columns: grid, start, targets.');
+    try {
+      grid = JSON.parse(parts[0]);
+      start = JSON.parse(parts[1]);
+      targets = JSON.parse(parts[2]);
+    } catch (e) {
+      throw new Error('Failed to parse JSON in CSV: ' + e.message);
+    }
+  } else {
+    // Original format
+    grid = [];
+    for (const line of lines) {
+      if (line.startsWith('start,')) {
+        const p = line.split(',');
+        start = [+p[1], +p[2]];
+      } else if (line.startsWith('target,')) {
+        const p = line.split(',');
+        if (!targets) targets = [];
+        targets.push([+p[1], +p[2]]);
+      } else {
+        const row = line.split(',').map(v => +v.trim());
+        if (row.some(isNaN)) throw new Error(`Bad CSV row: "${line}"`);
+        grid.push(row);
+      }
+    }
+    if (!start) start = [0, 0];
+    if (!targets) {
+      for (let r = 0; r < grid.length; r++)
+        for (let c = 0; c < grid[r].length; c++)
+          if (grid[r][c] === 2) targets = [[r, c]];
+    }
+    if (!targets) throw new Error('No target found. Add a cell value of 2 or a "target,row,col" line.');
   }
-  if (!grid.length) throw new Error('CSV has no grid rows.');
-  const start = meta.start || [0, 0];
-  let target = meta.target;
-  if (!target) { for (let r = 0; r < grid.length; r++)for (let c = 0; c < grid[r].length; c++)if (grid[r][c] === 2) target = [r, c]; }
-  if (!target) throw new Error('No target found. Add a cell value of 2 or a "target,row,col" line.');
-  return JSON.stringify({ grid, start, targets: [target] });
+  return JSON.stringify({ grid, start, targets });
 }
 
 function reconstructPath(parentMap, startKey, target) {
@@ -73,29 +103,35 @@ function reconstructPath(parentMap, startKey, target) {
   return path.reverse();
 }
 
-function bfs(grid, start, target) {
+function bfs(grid, start, targets) {
   const R = grid.length, C = grid[0].length, DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-  const sk = start[0] + ',' + start[1], tk = target[0] + ',' + target[1];
+  const sk = start[0] + ',' + start[1], tk = targets[0][0] + ',' + targets[0][1]; // For compatibility, but will change
   const t0 = performance.now();
   const queue = [start], visited = new Set([sk]), parent = new Map([[sk, null]]);
-  let reached = false;
+  let reached = false, reachedTarget = null;
+  const targetSet = new Set(targets.map(t => t[0] + ',' + t[1]));
   outer: while (queue.length) {
     const [r, c] = queue.shift();
-    if (r + ',' + c === tk) { reached = true; break outer; }
+    const key = r + ',' + c;
+    if (targetSet.has(key)) {
+      reached = true;
+      reachedTarget = [r, c];
+      break outer;
+    }
     for (const [dr, dc] of DIRS) {
       const nr = r + dr, nc = c + dc, nk = nr + ',' + nc;
       if (nr >= 0 && nr < R && nc >= 0 && nc < C && grid[nr][nc] !== 1 && !visited.has(nk)) {
-        visited.add(nk); parent.set(nk, r + ',' + c); queue.push([nr, nc]);
+        visited.add(nk); parent.set(nk, key); queue.push([nr, nc]);
       }
     }
   }
   const t1 = performance.now();
-  const path = reached ? reconstructPath(parent, sk, target) : [];
-  return { path, targetReached: reached, executionTimeMs: Math.round(t1 - t0), visited };
+  const path = reached ? reconstructPath(parent, sk, reachedTarget) : [];
+  return { path, targetReached: reached, executionTimeMs: Math.round(t1 - t0), visited, reachedTarget };
 }
 
-function buildOutput(path, reached, ms) {
-  return { total_steps: reached ? path.length - 1 : 0, path, target_reached: reached, execution_time_ms: ms };
+function buildOutput(path, reached, ms, reachedTarget) {
+  return { total_steps: reached ? path.length - 1 : 0, path, target_reached: reached, execution_time_ms: ms, reached_target: reachedTarget || null };
 }
 
 // ──────────────────────────────────────────
@@ -273,7 +309,8 @@ function formatOutput(obj) {
       : '[ ]'
     },
   "target_reached": ${obj.target_reached},
-  "execution_time_ms": ${obj.execution_time_ms}
+  "execution_time_ms": ${obj.execution_time_ms},
+  "reached_target": ${obj.reached_target ? `[${obj.reached_target[0]}, ${obj.reached_target[1]}]` : null}
 }`;
 
   return raw;
@@ -285,11 +322,13 @@ function syntaxHL(obj) {
   // Colour: keys, numbers, booleans, strings — left as-is (not strings in our output)
   return raw
     // keys
-    .replace(/"(total_steps|path|target_reached|execution_time_ms)"(\s*:)/g,
+    .replace(/"(total_steps|path|target_reached|execution_time_ms|reached_target)"(\s*:)/g,
       '<span class="jk">"$1"</span>$2')
     // booleans
     .replace(/\b(true)\b/g, '<span class="jt">$1</span>')
     .replace(/\b(false)\b/g, '<span class="jf">$1</span>')
+    // null
+    .replace(/\b(null)\b/g, '<span class="jn">$1</span>')
     // numbers (standalone, not inside strings)
     .replace(/(?<!["\w])-?\b(\d+)\b(?!["\w])/g, '<span class="jn">$1</span>');
 }
@@ -507,17 +546,17 @@ function handleCalc() {
     try {
       const raw = getJSON();
       if (!raw) throw new Error('No input detected. Choose a preset, paste JSON, or upload a file.');
-      const { grid, start, target } = parseAndValidate(raw);
-      const { path, targetReached, executionTimeMs, visited } = bfs(grid, start, target);
-      const out = buildOutput(path, targetReached, executionTimeMs);
-      lastRes = { grid, start, target, path, output: out, visited };
+      const { grid, start, targets } = parseAndValidate(raw);
+      const { path, targetReached, executionTimeMs, visited, reachedTarget } = bfs(grid, start, targets);
+      const out = buildOutput(path, targetReached, executionTimeMs, reachedTarget);
+      lastRes = { grid, start, target: reachedTarget || targets[0], path, output: out, visited };
 
       // Stats
       document.getElementById('s-steps').textContent = out.total_steps;
       const re = document.getElementById('s-reached');
       re.textContent = targetReached ? '✓  Yes' : '✗  No';
       re.className = 'stat-val med ' + (targetReached ? 'green' : 'red');
-      document.getElementById('s-reached-sub').textContent = targetReached ? 'Shortest path found!' : 'Target is unreachable';
+      document.getElementById('s-reached-sub').textContent = targetReached ? `Reached target at [${reachedTarget[0]}, ${reachedTarget[1]}]` : 'No target reachable';
       document.getElementById('s-time').textContent = executionTimeMs + 'ms';
       document.getElementById('s-grid').textContent = grid.length + ' × ' + grid[0].length;
       document.getElementById('stats-card').classList.add('show');
@@ -535,8 +574,8 @@ function handleCalc() {
       document.getElementById('copy-btn').classList.add('show');
       document.getElementById('dl-json-btn').style.display = 'inline-flex';
 
-      renderGrid(grid, path, start, target);
-      toast(targetReached ? `🎯 Path found! ${out.total_steps} step${out.total_steps !== 1 ? 's' : ''} to reach the target.` : '🚫 No path available — target is completely blocked.');
+      renderGrid(grid, path, start, reachedTarget || targets[0]);
+      toast(targetReached ? `🎯 Path found! ${out.total_steps} step${out.total_steps !== 1 ? 's' : ''} to reach target at [${reachedTarget[0]}, ${reachedTarget[1]}].` : '🚫 No path available — no target is reachable.');
     } catch (e) { showErr(e.message); }
     btn.classList.remove('loading');
   }, 60);
